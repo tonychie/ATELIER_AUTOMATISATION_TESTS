@@ -12,6 +12,6 @@ from storage import save_run
 from tester.runner import run_all
 
 if __name__ == "__main__":
-    result = run_all()
+    result = run_all(source="scheduled")
     run_id = save_run(result)
     print(f"Run #{run_id} enregistré — {result['summary']}")

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 
 from storage import init_db, save_run, list_runs, get_last_run
 from tester.runner import run_all
@@ -27,7 +27,10 @@ def run():
             wait = int(MIN_SECONDS_BETWEEN_RUNS - elapsed)
             return jsonify({"error": f"Trop de requêtes, réessayez dans {wait}s"}), 429
 
-    run_result = run_all()
+    source = request.args.get("source", "web")
+    if source not in ("web", "scheduled"):
+        source = "web"
+    run_result = run_all(source=source)
     save_run(run_result)
     return jsonify(run_result)
 

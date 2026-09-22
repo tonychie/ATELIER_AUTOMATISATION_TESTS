@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard — Tests API Agify</title>
+  <title>QoS Dashboard — Agify (estimation d'âge)</title>
   <style>
     :root{
       --bg:#0b1020; --card:#121a33; --muted:#aab4d4; --text:#e9edff;
@@ -14,81 +14,97 @@
       background: radial-gradient(1200px 600px at 10% 0%, #172257 0%, var(--bg) 60%);
       color:var(--text); line-height:1.45;}
     header{padding:28px 18px 6px; max-width:1100px; margin:0 auto;}
-    h1{margin:0 0 6px; font-size: clamp(20px, 3vw, 30px);}
+    h1{margin:8px 0 6px; font-size: clamp(20px, 3vw, 30px);}
     .muted{color:var(--muted)}
     .container{max-width:1100px; margin:0 auto; padding:18px;}
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
     .card{background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
       border:1px solid rgba(255,255,255,0.08); box-shadow: 0 12px 30px rgba(0,0,0,0.35);
       border-radius:16px; padding:16px; margin-bottom:16px;}
-    .kpi{display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; margin-top:10px;}
-    @media (max-width: 900px){ .kpi{grid-template-columns: repeat(2, 1fr);} }
-    .box{padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);}
-    .box b{display:block; font-size:20px; margin-bottom:4px;}
-    .box span{color:var(--muted); font-size:12px;}
+    .kicker{display:flex; gap:8px; flex-wrap:wrap;}
     .pill{display:inline-flex; gap:8px; align-items:center; padding:4px 10px; border-radius:999px;
       font-size:12px; border:1px solid rgba(255,255,255,0.15);}
     .pill.ok{background: rgba(98,214,160,0.12); border-color: rgba(98,214,160,0.28); color:#9df0c4;}
     .pill.bad{background: rgba(255,107,122,0.12); border-color: rgba(255,107,122,0.28); color:#ffb3bc;}
+    .pill.cat-contract{background: rgba(119,186,255,0.14); border-color: rgba(119,186,255,0.3); color:#bfe0ff;}
+    .pill.cat-robustness{background: rgba(255,204,102,0.14); border-color: rgba(255,204,102,0.3); color:#ffe2a6;}
+    .pill.cat-qos{background: rgba(168,133,255,0.14); border-color: rgba(168,133,255,0.3); color:#d9c8ff;}
+    .kpi{display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; margin-top:10px;}
+    @media (max-width: 900px){ .kpi{grid-template-columns: repeat(2, 1fr);} }
+    .box{padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);}
+    .box b{display:block; font-size:20px; margin-bottom:4px;}
+    .box span{color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em;}
     table{width:100%; border-collapse: collapse; margin-top:10px; font-size:13px;}
-    th, td{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;}
+    th, td{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left; vertical-align:top;}
     th{background: rgba(119,186,255,0.10);}
+    code{background: rgba(255,255,255,0.06); border-radius:6px; padding:2px 6px; font-size:12px;}
     a.btn{display:inline-block; margin-top:10px; padding:10px 16px; border-radius:12px;
       background: rgba(119,186,255,0.18); border:1px solid rgba(119,186,255,0.34);
       color:var(--text); text-decoration:none; font-weight:600;}
     a.btn:hover{filter:brightness(1.1)}
+    a.btn.ghost{background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15)}
     .bars{display:flex; align-items:flex-end; gap:4px; height:80px; margin-top:10px;}
     .bar{flex:1; background: var(--accent); border-radius:3px 3px 0 0; min-height:2px;}
-    code{background: rgba(255,255,255,0.06); border-radius:6px; padding:2px 6px;}
   </style>
 </head>
 <body>
 <header>
-  <div class="row">
-    <span class="pill">Dashboard</span>
-    <span class="pill ok">API: {{ last.api if last else "—" }}</span>
+  <div class="kicker">
+    <span class="pill">Testing as Code</span>
+    <span class="pill">API monitoring</span>
+    <span class="pill">Python / Flask</span>
   </div>
-  <h1>Tableau de bord — Qualité de service</h1>
-  <p class="muted">Historique des runs de tests automatisés (max {{ runs|length }} affichés). Dernière exécution : {{ last.timestamp if last else "aucune" }}</p>
+  <h1>QoS Dashboard — Agify (estimation d'âge à partir d'un prénom)</h1>
+  <p class="muted">Suite de tests automatisés sur <code>https://api.agify.io</code> : contrat fonctionnel, robustesse et qualité de service.
+  Chaque run est horodaté et conservé en SQLite. Budget ~10 requêtes/run, 1 run manuel autorisé toutes les 60s.</p>
+  <div class="row" style="margin-top:10px">
+    <a class="btn" href="/run">▶ Lancer un run</a>
+    <a class="btn ghost" href="/health">/health</a>
+    <a class="btn ghost" href="/api/runs">Export JSON</a>
+    <a class="btn ghost" href="/">Consignes</a>
+  </div>
 </header>
 
 <main class="container">
+  {% if last %}
   <div class="card">
     <div class="row" style="justify-content:space-between">
-      <h2 style="margin:0">Dernier run</h2>
-      <div class="row">
-        <a class="btn" href="/run">Lancer un run</a>
-        <a class="btn" href="/api/runs" style="background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15)">Export JSON</a>
+      <div>
+        <h2 style="margin:0">Run #{{ last.id }} — {{ last.timestamp }}</h2>
+        <p class="muted" style="margin:4px 0 0">Déclenché par « {{ last.source }} »</p>
       </div>
+      <span class="pill {{ 'ok' if last.summary.failed == 0 else 'bad' }}">Verdict : {{ 'OK' if last.summary.failed == 0 else 'ECHEC' }}</span>
     </div>
 
-    {% if last %}
     <div class="kpi">
-      <div class="box"><b>{{ last.summary.passed }}/{{ last.summary.passed + last.summary.failed }}</b><span>Tests passés</span></div>
+      <div class="box"><b>{{ last.summary.passed }}/{{ last.summary.passed + last.summary.failed }}</b><span>Tests réussis</span></div>
       <div class="box"><b>{{ (last.summary.error_rate * 100) | round(1) }}%</b><span>Taux d'erreur</span></div>
+      <div class="box"><b>{{ last.summary.availability_pct }}%</b><span>Disponibilité</span></div>
       <div class="box"><b>{{ last.summary.latency_ms_avg }} ms</b><span>Latence moyenne</span></div>
       <div class="box"><b>{{ last.summary.latency_ms_p95 }} ms</b><span>Latence p95</span></div>
-      <div class="box"><b>{{ last.timestamp[11:19] }}</b><span>Heure (UTC)</span></div>
     </div>
 
-    <h3>Détail des tests</h3>
+    <h3 style="margin-top:20px">Détail des tests</h3>
+    <p class="muted small">contract = contrat fonctionnel · robustness = entrées invalides / rafale · qos = seuil de latence.</p>
     <table>
-      <thead><tr><th>Test</th><th>Statut</th><th>Latence</th><th>Détails</th></tr></thead>
+      <thead><tr><th>#</th><th>Test</th><th>Catégorie</th><th>Statut</th><th>Latence</th><th>Message</th></tr></thead>
       <tbody>
         {% for t in last.tests %}
         <tr>
-          <td>{{ t.name }}</td>
+          <td>{{ loop.index }}</td>
+          <td><code>{{ t.name }}</code></td>
+          <td><span class="pill cat-{{ t.category }}">{{ t.category }}</span></td>
           <td><span class="pill {{ 'ok' if t.status == 'PASS' else 'bad' }}">{{ t.status }}</span></td>
           <td>{{ t.latency_ms }} ms</td>
-          <td class="muted">{{ t.details }}</td>
+          <td class="muted">{{ '—' if t.status == 'PASS' else t.details }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    {% else %}
-    <p class="muted">Aucun run enregistré pour le moment. Cliquez sur "Lancer un run".</p>
-    {% endif %}
   </div>
+  {% else %}
+  <div class="card"><p class="muted">Aucun run enregistré pour le moment. Cliquez sur "Lancer un run".</p></div>
+  {% endif %}
 
   {% if runs and runs|length > 1 %}
   <div class="card">
@@ -102,17 +118,20 @@
   {% endif %}
 
   <div class="card">
-    <h2 style="margin-top:0">Historique</h2>
+    <h2 style="margin-top:0">Historique des runs</h2>
+    <p class="muted">Les {{ runs|length }} runs les plus récents. Export complet via <a href="/api/runs">/api/runs</a>.</p>
     <table>
-      <thead><tr><th>#</th><th>Timestamp (UTC)</th><th>Passés</th><th>Échoués</th><th>Erreur</th><th>Latence avg</th><th>Latence p95</th></tr></thead>
+      <thead><tr><th>Run</th><th>Horodatage</th><th>Source</th><th>Verdict</th><th>OK/Total</th><th>Erreurs</th><th>Dispo.</th><th>Moy.</th><th>p95</th></tr></thead>
       <tbody>
         {% for r in runs %}
         <tr>
-          <td>{{ r.id }}</td>
+          <td>#{{ r.id }}</td>
           <td>{{ r.timestamp }}</td>
-          <td>{{ r.summary.passed }}</td>
-          <td>{{ r.summary.failed }}</td>
+          <td>{{ r.source }}</td>
+          <td><span class="pill {{ 'ok' if r.summary.failed == 0 else 'bad' }}">{{ 'OK' if r.summary.failed == 0 else 'ECHEC' }}</span></td>
+          <td>{{ r.summary.passed }}/{{ r.summary.passed + r.summary.failed }}</td>
           <td>{{ (r.summary.error_rate * 100) | round(1) }}%</td>
+          <td>{{ r.summary.availability_pct }}%</td>
           <td>{{ r.summary.latency_ms_avg }} ms</td>
           <td>{{ r.summary.latency_ms_p95 }} ms</td>
         </tr>
@@ -121,7 +140,7 @@
     </table>
   </div>
 
-  <p class="muted">Voir aussi les consignes complètes sur <a href="/">la page d'accueil</a> et l'état de santé sur <code>/health</code>.</p>
+  <p class="muted small">Atelier M1 — « Testing as Code &amp; API Monitoring » · données fournies par <a href="https://agify.io" target="_blank" rel="noopener">agify.io</a> · endpoints machine : <code>/api/runs</code>, <code>/health</code>.</p>
 </main>
 </body>
 </html>

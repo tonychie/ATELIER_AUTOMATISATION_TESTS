@@ -1,4 +1,4 @@
-"""Exécute la suite de tests et calcule les métriques QoS (latence avg/p95, taux d'erreur)."""
+"""Exécute la suite de tests et calcule les métriques QoS (latence avg/p95, taux d'erreur, disponibilité)."""
 import datetime
 import statistics
 
@@ -15,7 +15,7 @@ def _percentile_95(values):
     return s[idx]
 
 
-def run_all():
+def run_all(source="web"):
     results = []
     for test_fn in ALL_TESTS:
         try:
@@ -23,6 +23,7 @@ def run_all():
         except Exception as exc:  # une erreur de test ne doit jamais casser le run
             results.append({
                 "name": getattr(test_fn, "__name__", "unknown"),
+                "category": "contract",
                 "status": "FAIL",
                 "latency_ms": 0.0,
                 "details": f"Exception: {exc}",
@@ -32,17 +33,20 @@ def run_all():
     failed = len(results) - passed
     latencies = [r["latency_ms"] for r in results if r["latency_ms"]]
     error_rate = round(failed / len(results), 4) if results else 0.0
+    availability = round(passed / len(results) * 100, 1) if results else 0.0
 
     summary = {
         "passed": passed,
         "failed": failed,
         "error_rate": error_rate,
+        "availability_pct": availability,
         "latency_ms_avg": round(statistics.mean(latencies), 1) if latencies else 0.0,
         "latency_ms_p95": round(_percentile_95(latencies), 1),
     }
 
     run = {
         "api": API_NAME,
+        "source": source,
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "summary": summary,
         "tests": results,
